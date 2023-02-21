@@ -9,30 +9,36 @@ y = np.concatenate((np.ones(X1.shape[0]), np.zeros(X2.shape[0])))
 
 mu1 = np.mean(X1, axis=0)
 mu2 = np.mean(X2, axis=0)
-cov1 = np.cov(X1.T)
-cov2 = np.cov(X2.T)
 p1 = 0.5
 p2 = 0.5
+cov = np.zeros((2,2))
 
-def qda_discriminant(x, mu, cov,p):
-    d = x.shape[0]
-    cov_inv = np.linalg.inv(cov)
-    return -0.5*np.log(np.linalg.det(cov)) - 0.5*(x - mu).T.dot(cov_inv).dot(x - mu)+np.log(p)
+for x in X1:
+    xdistance = (x-mu1).reshape((-1,1))
+    cov += xdistance.dot(xdistance.T)
+for x in X2:
+    xdistance = (x-mu2).reshape((-1,1))
+    cov += xdistance.dot(xdistance.T)
+cov = cov/(len(X)-2)
+
+
+def lda_discriminant(x, mu, cov, p):
+    inv_cov = np.linalg.inv(cov)
+    return x.dot(inv_cov).dot(mu.T) - 0.5 * mu.dot(inv_cov).dot(mu.T)+np.log(p)
 
 
 # meshgrid
-x_min, x_max = X[:, 0].min() - 10, X[:, 0].max() + 10
-y_min, y_max = X[:, 1].min() - 10, X[:, 1].max() + 10
-xx, yy = np.meshgrid(np.arange(x_min, x_max, 0.1),
-                     np.arange(y_min, y_max, 0.1))
+x_min, x_max = X[:, 0].min() - 1, X[:, 0].max() + 1
+y_min, y_max = X[:, 1].min() - 1, X[:, 1].max() + 1
+xx, yy = np.meshgrid(np.arange(x_min, x_max, 0.01), np.arange(y_min, y_max, 0.01))
 
 # predict
 Z = np.zeros(xx.shape)
 for i in range(xx.shape[0]):
     for j in range(xx.shape[1]):
         x = np.array([xx[i,j], yy[i,j]])
-        d1 = qda_discriminant(x, mu1, cov1, p1)
-        d2 = qda_discriminant(x, mu2, cov2, p2)
+        d1 = lda_discriminant(x, mu1, cov, p1)
+        d2 = lda_discriminant(x, mu2, cov, p2)
         if d1 > d2:
             Z[i,j] = 1
         else:
@@ -45,6 +51,6 @@ plt.scatter(X1[:, 0], X1[:, 1], c='b', label='Label 1')
 plt.scatter(X2[:, 0], X2[:, 1], c='r', label='Label 2')
 plt.xlabel('X1')
 plt.ylabel('X2')
-plt.title('Quadratic Discriminant Analysis')
+plt.title('Linear Discriminant Analysis')
 plt.legend()
 plt.show()
